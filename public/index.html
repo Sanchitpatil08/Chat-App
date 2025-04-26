@@ -1,35 +1,159 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat App</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chat App</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #f0f2f5;
+    }
+
+    .chat-container {
+      width: 400px;
+      height: 600px;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.2);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .chat-header {
+      background-color: #4a90e2;
+      color: white;
+      padding: 20px;
+      font-size: 1.5rem;
+      font-weight: bold;
+      text-align: center;
+    }
+
+    .messages {
+      flex: 1;
+      padding: 15px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: #f9f9f9;
+    }
+
+    .message {
+      max-width: 70%;
+      padding: 10px 15px;
+      border-radius: 20px;
+      word-break: break-word;
+      position: relative;
+      font-size: 0.95rem;
+    }
+
+    .sent {
+      align-self: flex-end;
+      background-color: #dcf8c6;
+      color: #333;
+    }
+
+    .received {
+      align-self: flex-start;
+      background-color: #ffffff;
+      border: 1px solid #e0e0e0;
+      color: #333;
+    }
+
+    .input-area {
+      display: flex;
+      padding: 15px;
+      background: #f0f0f0;
+      gap: 10px;
+    }
+
+    .input-area input {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 20px;
+      outline: none;
+      background: #e0e0e0;
+    }
+
+    .input-area button {
+      padding: 10px 20px;
+      border: none;
+      background-color: #4a90e2;
+      color: white;
+      border-radius: 20px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background 0.3s ease;
+    }
+
+    .input-area button:hover {
+      background-color: #3b77c2;
+    }
+  </style>
 </head>
+
 <body>
-    <h1>Chatting</h1>
+  <div class="chat-container">
+    <div class="chat-header">Chatting</div>
+    <div class="messages" id="messages"></div>
+    <div class="input-area">
+      <input type="text" id="message" placeholder="Enter Message" />
+      <button id="sendBtn">Send</button>
+    </div>
+  </div>
 
-    <input type="text" id="message" placeholder="Enter Message"/>
-    <button id="sendBtn">Send</button>
-    <div id="messages"></div>
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    const sendBtn = document.getElementById("sendBtn");
+    const messageInput = document.getElementById("message");
+    const allMessages = document.getElementById("messages");
 
-    <script src="/socket.io/socket.io.js"></script>
-    <script>
-        const socket = io();
-        const sendBtn = document.getElementById("sendBtn");
-        const messageInput = document.getElementById("message");
-        const allMessages = document.getElementById("messages")
+    // Generate a random ID for this user to differentiate messages
+    const userId = Math.floor(Math.random() * 10000);
 
-        socket.on("message", (message)=> {
-            const p = document.createElement("p");
-            p.innerText = message;
-            allMessages.appendChild(p)
-        });
+    socket.on("message", (data) => {
+      const div = document.createElement("div");
+      div.classList.add("message");
 
-        sendBtn.addEventListener("click" , (e) =>{
-            const message = messageInput.value;
-            console.log(message);
-            socket.emit("usser-message", message)
-        })
-    </script>
+      if (data.userId === userId) {
+        div.classList.add("sent");
+      } else {
+        div.classList.add("received");
+      }
+
+      div.innerText = data.message;
+      allMessages.appendChild(div);
+      allMessages.scrollTop = allMessages.scrollHeight; // Auto-scroll to bottom
+    });
+
+    sendBtn.addEventListener("click", () => {
+      const message = messageInput.value.trim();
+      if (message !== "") {
+        socket.emit("usser-message", { message, userId });
+        messageInput.value = "";
+      }
+    });
+
+    messageInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        sendBtn.click();
+      }
+    });
+  </script>
 </body>
 </html>
